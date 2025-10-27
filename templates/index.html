@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>CRSD Review Sentiment</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root { --bg:#0b1020; --card:#121831; --muted:#9aa4c7; --txt:#e8edff; --accent:#6ca0ff; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: linear-gradient(180deg, #0b1020 0%, #0f1530 100%);
+      color: var(--txt);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    }
+    .wrap { width: min(920px, 92vw); }
+    .header {
+      display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom: 1rem;
+    }
+    .title { font-weight: 700; letter-spacing: .3px; font-size: clamp(22px, 3.6vw, 28px); }
+    .muted { color: var(--muted); font-size: .95rem; }
+    .card {
+      background: radial-gradient(1200px 500px at 0% -10%, rgba(96,148,255,.16), transparent 40%),
+                  radial-gradient(1200px 500px at 100% 110%, rgba(96,148,255,.16), transparent 40%),
+                  var(--card);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 16px; padding: 18px; box-shadow: 0 8px 24px rgba(0,0,0,.35);
+    }
+    textarea {
+      width: 100%; height: 150px; resize: vertical;
+      border: 1px solid rgba(255,255,255,.12); border-radius: 12px;
+      background: rgba(255,255,255,.03); color: var(--txt);
+      padding: 12px 14px; font-size: 1rem; outline: none;
+    }
+    textarea::placeholder { color: #94a3b8; }
+    .row { display:flex; gap:.75rem; align-items:center; flex-wrap: wrap; }
+    button {
+      background: var(--accent); color: #07142b; font-weight: 600;
+      border: none; padding: .65rem 1rem; border-radius: 10px; cursor: pointer;
+    }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    .result { margin-top: 14px; }
+    .chip {
+      display:inline-block; background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12); color: var(--txt);
+      padding: .25rem .55rem; border-radius: 999px; font-size: .85rem;
+    }
+    pre {
+      background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.08);
+      padding: 12px 14px; border-radius: 12px; overflow:auto; color: #d6e1ff;
+    }
+    .footer { margin-top: 12px; text-align: right; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <div class="title">CRSD Sentiment Analysis 🔍</div>
+        <div class="muted">Paste a review, click Analyze, and see the prediction.</div>
+      </div>
+      <div class="chip" id="health">checking…</div>
+    </div>
+
+    <div class="card">
+      <textarea id="text" placeholder="e.g., The phone looks amazing but the camera struggles in low light."></textarea>
+      <div class="row" style="margin-top:10px">
+        <button id="btn" onclick="analyze()">Analyze</button>
+        <span id="status" class="muted"></span>
+      </div>
+
+      <div class="result" id="result" style="display:none">
+        <div style="display:flex; align-items:center; gap:.6rem; margin-bottom:.5rem">
+          <div id="label" style="font-weight:700"></div>
+          <div id="raw" class="chip"></div>
+        </div>
+        <pre id="proba">(no probabilities available)</pre>
+      </div>
+    </div>
+
+    <div class="footer muted">Served by FastAPI at <span id="host"></span></div>
+  </div>
+
+<script>
+const hostEl = document.getElementById('host'); hostEl.textContent = location.origin;
+const healthEl = document.getElementById('health');
+
+(async function checkHealth(){
+  try{
+    const r = await fetch('/health');
+    const data = await r.json();
+    healthEl.textContent = data.status === 'ok' ? 'API: ok' : 'API: down';
+  }catch(_){ healthEl.textContent = 'API: down'; }
+})();
+
+async function analyze(){
+  const btn = document.getElementById('btn');
+  const text = document.getElementById('text').value.trim();
+  const status = document.getElementById('status');
+  const result = document.getElementById('result');
+  const label = document.getElementById('label');
+  const raw = document.getElementById('raw');
+  const proba = document.getElementById('proba');
+
+  if(!text){ status.textContent = "Please enter some text."; return; }
+
+  status.textContent = "Analyzing…"; btn.disabled = true; result.style.display = "none";
+
+  try{
+    const res = await fetch('/predict', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ text })
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+
+    label.textContent = data.label;
+    raw.textContent = 'raw: ' + data.raw_label;
+    proba.textContent = data.proba ? JSON.stringify(data.proba, null, 2)
+                                   : '(no probabilities available)';
+
+    result.style.display = "block";
+    status.textContent = "";
+  }catch(err){
+    status.textContent = "Error calling API. See console.";
+    console.error(err);
+  }finally{
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
