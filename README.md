@@ -83,3 +83,21 @@ The trained model is deployed with **FastAPI** and served with a lightweight HTM
 - Run FastAPI server: uvicorn server:app --reload --port 9000
   
 - Access the app: http://localhost:9000/
+
+---
+
+## Example Classification
+
+- Positive sentiment classification
+
+<img width="729" height="414" alt="Image" src="https://github.com/user-attachments/assets/78950ecc-ffe1-4f5d-ac60-12b958d6175e" />
+
+
+- Negative sentiment classification
+
+<img width="718" height="405" alt="Image" src="https://github.com/user-attachments/assets/66d97943-65ff-4ca6-903a-16007fdfaa16" />
+
+
+- Neutral sentiment classification
+
+<img width="720" height="408" alt="Image" src="https://github.com/user-attachments/assets/6769c5d5-4574-4035-ab4a-8d524ae43532" />
